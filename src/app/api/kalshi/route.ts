@@ -1,13 +1,20 @@
 import { kalshiFetch } from "@/lib/kalshi/fetch";
 
-const MARKET_TICKER = "KXCDCTRAVELH5-26-3";
-const SERIES_TICKER = "KXCDCTRAVELH5";
-// 👇 Had to get this from looking at the request in the browser
-const MARKET_ID = "d02240fe-5c63-4378-885f-97657e90b783";
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const marketData = await kalshiFetch(`/markets/${MARKET_TICKER}`);
+    const { searchParams } = new URL(request.url);
+    const marketTicker = searchParams.get("marketTicker");
+    const seriesTicker = searchParams.get("seriesTicker");
+    const marketId = searchParams.get("marketId");
+
+    if (!marketTicker || !seriesTicker || !marketId) {
+      return Response.json(
+        { error: "marketTicker, seriesTicker, and marketId are required" },
+        { status: 400 },
+      );
+    }
+
+    const marketData = await kalshiFetch(`/markets/${marketTicker}`);
 
     const openTime = new Date(marketData.market.open_time);
     const now = new Date();
@@ -22,7 +29,7 @@ export async function GET() {
     const end_ts = Math.floor(now.getTime() / 1000);
 
     const candlesticks = await kalshiFetch(
-      `/series/${SERIES_TICKER}/markets/${MARKET_ID}/candlesticks`,
+      `/series/${seriesTicker}/markets/${marketId}/candlesticks`,
       {
         query: {
           start_ts: start_ts,

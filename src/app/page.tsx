@@ -175,7 +175,7 @@ export default function Home() {
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-100 p-6 font-[family-name:var(--font-geist-sans)]">
       <header className="mx-auto mb-8 w-full max-w-6xl text-center">
         <h1 className="my-4 text-2xl font-bold text-black md:text-5xl">
-          Will H5N1 be the next COVID?
+          Will bird flu be the next COVID?
         </h1>
         <p className="mb-4 text-2xl text-gray-700">
           {isLoading ? (
