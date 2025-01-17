@@ -196,9 +196,9 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-100 p-6 font-[family-name:var(--font-geist-sans)] text-foreground dark:bg-gray-900">
-      <header className="mx-auto mb-8 w-full max-w-6xl text-center">
-        <h1 className="my-4 text-2xl font-bold md:text-5xl">
+    <div className="min-h-screen">
+      <header className="mx-auto w-full max-w-6xl text-center">
+        <h1 className="mb-4 mt-2 text-2xl font-bold md:text-5xl">
           Will bird flu be the next COVID?{" "}
           <MobileFriendlyTooltip>
             Will bird flu have an impact on people&apos;s lives on the same
