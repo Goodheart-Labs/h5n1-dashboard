@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "H5N1 Risk Dashboard",
+  title: "AGI Timelines Dashboard",
   description:
-    "Real-time monitoring of avian influenza trends and risk assessment",
+    "Real-time monitoring of artificial general intelligence (AGI) timeline predictions",
 };
 
 export default function RootLayout({

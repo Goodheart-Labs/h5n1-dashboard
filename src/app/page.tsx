@@ -199,11 +199,11 @@ export default function Home() {
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-100 p-6 font-[family-name:var(--font-geist-sans)] text-foreground dark:bg-gray-900">
       <header className="mx-auto mb-8 w-full max-w-6xl text-center">
         <h1 className="my-4 text-2xl font-bold md:text-5xl">
-          Will bird flu be the next COVID?{" "}
+          When will we achieve AGI?{" "}
           <MobileFriendlyTooltip>
-            Will bird flu have an impact on people&apos;s lives on the same
-            order of magnitude as covid? Will it cause a random person huge
-            personal inconvenience?
+            When will we develop artificial general intelligence (AGI) - AI
+            systems that match or exceed human-level intelligence across most
+            domains?
           </MobileFriendlyTooltip>
         </h1>
         <p className="mb-4 min-h-[108px] text-2xl text-gray-700 dark:text-gray-300">
@@ -538,6 +538,7 @@ export default function Home() {
             </Collapsible.Root>
           </div>
         </div>
+        {/* Poll link temporarily removed while we transition to AGI focus
         <div className="mb-8 text-gray-600 dark:text-gray-300">
           <p className="mb-2">
             If you want to vote for other things to be included in the index or
@@ -552,10 +553,11 @@ export default function Home() {
             </a>
           </p>
         </div>
+        */}
 
         <div className="mb-1 text-center">
           <a
-            href="https://github.com/Goodheart-Labs/h5n1-dashboard"
+            href="https://github.com/Goodheart-Labs/agi-timelines-dashboard"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-600"
@@ -572,25 +574,6 @@ export default function Home() {
             className="text-blue-500 hover:text-blue-600"
           >
             buy a paid subscription to Predictive Text
-          </a>
-        </div>
-        <div className="mb-1 flex flex-col items-center gap-2">
-          <p className="text-gray-600 dark:text-gray-300">
-            If you want more people to see this dashboard today, a vote on
-            Product Hunt would help
-          </p>
-          <a
-            href="https://www.producthunt.com/posts/bird-flu-risk-dashboard?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-bird&#0045;flu&#0045;risk&#0045;dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=766429&theme=light"
-              alt="Bird Flu Risk Dashboard - Little chance of it being the next Covid | Product Hunt"
-              width={250}
-              height={54}
-              style={{ width: "250px", height: "54px" }}
-            />
           </a>
         </div>
 
