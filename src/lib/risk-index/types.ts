@@ -82,6 +82,7 @@ export type KalshiResponse = {
   dateRange: {
     start: string; // ISO string
     end: string; // ISO string
+    interval: number;
   };
 };
 

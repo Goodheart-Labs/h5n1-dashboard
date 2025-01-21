@@ -141,7 +141,8 @@ export function LineGraph({
             }
           />
           <Line
-            type="monotone"
+            type="step"
+            accentHeight={20}
             dataKey="value"
             stroke={color}
             strokeWidth={2}

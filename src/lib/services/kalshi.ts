@@ -4,66 +4,98 @@ export async function fetchKalshiData({
   marketTicker,
   seriesTicker,
   marketId,
+  period_interval,
 }: {
-  marketTicker: string;
-  seriesTicker: string;
   marketId: string;
+  marketTicker: string;
+  seriesTicker?: string;
+  period_interval: number;
 }): Promise<ChartDataPoint[]> {
-  const data = await fetchFromAPI({ marketTicker, seriesTicker, marketId });
-  return transformKalshiData(data);
+  const data = await fetchFromAPI({
+    marketId,
+    marketTicker,
+    seriesTicker,
+    period_interval,
+  });
+
+  return transformKalshiData(data, period_interval);
 }
 
 async function fetchFromAPI({
   marketTicker,
   seriesTicker,
   marketId,
+  period_interval,
 }: {
-  marketTicker: string;
-  seriesTicker: string;
   marketId: string;
+  marketTicker: string;
+  seriesTicker?: string;
+  period_interval: number;
 }): Promise<KalshiResponse> {
-  const response = await fetch(
-    `/api/kalshi?marketTicker=${marketTicker}&seriesTicker=${seriesTicker}&marketId=${marketId}`,
-  );
+  const params = new URLSearchParams({
+    marketTicker,
+    marketId,
+    period_interval: period_interval.toString(),
+  });
+
+  if (seriesTicker) {
+    params.append("seriesTicker", seriesTicker);
+  }
+
+  const response = await fetch(`/api/kalshi?${params}`);
   if (!response.ok) throw new Error("API failed");
   return response.json();
 }
 
-function transformKalshiData(data: KalshiResponse): ChartDataPoint[] {
-  if (!data?.candlesticks?.candlesticks) {
-    return [];
-  }
+function transformKalshiData(
+  data: KalshiResponse,
+  intervalHours: number,
+): ChartDataPoint[] {
+  if (!data?.candlesticks?.candlesticks) return [];
 
-  // get the first date
-  const firstDate = data.candlesticks.candlesticks[0].end_period_ts;
-  const lastDate =
-    data.candlesticks.candlesticks[data.candlesticks.candlesticks.length - 1]
-      .end_period_ts;
-  let lastPrice = data.candlesticks.candlesticks[0].yes_bid.close;
+  const candlesticks = data.candlesticks.candlesticks;
+  if (candlesticks.length === 0) return [];
 
-  // Loop hourly until reaching the last date, update lastPrice
-  let currentDate = firstDate;
+  const firstDate = candlesticks[0].end_period_ts;
+  const lastDate = candlesticks[candlesticks.length - 1].end_period_ts;
+
   const dataPoints: ChartDataPoint[] = [];
+  let currentDate = firstDate;
+  let lastValidMean: number | null = null;
+  let lastCandlestickIndex = 0;
+
   while (currentDate <= lastDate) {
-    // Look for candlestick with end_period_ts equal to currentDate
-    const candlestick = data.candlesticks.candlesticks.find(
-      (stick) => stick.end_period_ts === currentDate,
-    );
-    if (candlestick && candlestick.price.open) {
-      lastPrice = candlestick.price.open;
+    let candlestick = null;
+    for (let i = lastCandlestickIndex; i < candlesticks.length; i++) {
+      const stick = candlesticks[i];
+      if (stick.end_period_ts >= currentDate) {
+        candlestick = stick;
+        lastCandlestickIndex = i;
+        break;
+      }
     }
 
-    const niceDate = new Date(currentDate * 1000);
-
-    // If date is not before 8am or after 11pm then add it
-    if (niceDate.getHours() >= 8 && niceDate.getHours() <= 23) {
-      dataPoints.push({
-        date: niceDate.toISOString(),
-        value: lastPrice,
-      });
+    if (!candlestick) {
+      currentDate += intervalHours * 60;
+      continue;
     }
 
-    currentDate += 3600;
+    // Update lastValidMean if we have a new mean price
+    if (candlestick.price.mean !== null) {
+      lastValidMean = candlestick.price.mean;
+    }
+
+    // If we don't have any valid mean yet, use mid price
+    const value =
+      lastValidMean ??
+      Math.round((candlestick.yes_bid.close + candlestick.yes_ask.close) / 2);
+
+    dataPoints.push({
+      date: new Date(currentDate * 1000).toISOString(),
+      value,
+    });
+
+    currentDate += intervalHours * 60;
   }
 
   return dataPoints;

@@ -5,8 +5,9 @@ export async function GET(request: Request) {
   const marketTicker = searchParams.get("marketTicker");
   const seriesTicker = searchParams.get("seriesTicker");
   const marketId = searchParams.get("marketId");
+  const period_interval = searchParams.get("period_interval");
 
-  if (!marketTicker || !seriesTicker || !marketId) {
+  if (!(marketTicker || seriesTicker) || !marketId || !period_interval) {
     return Response.json(
       { error: "Missing required parameters" },
       { status: 400 },
@@ -15,26 +16,20 @@ export async function GET(request: Request) {
 
   try {
     const marketData = await kalshiFetch(`/markets/${marketTicker}`);
-
-    const openTime = new Date(marketData.market.open_time);
-    const now = new Date();
-    const oneMonthAgo = new Date(openTime);
-    oneMonthAgo.setMonth(openTime.getMonth() - 1);
-
-    // Round to nearest hour
-    now.setMinutes(0, 0, 0);
-    oneMonthAgo.setMinutes(0, 0, 0);
-
-    const start_ts = Math.floor(oneMonthAgo.getTime() / 1000);
-    const end_ts = Math.floor(now.getTime() / 1000);
+    const start_ts = Math.floor(
+      new Date(marketData.market.open_time).getTime() / 1000,
+    );
+    const end_ts = Math.floor(
+      new Date(marketData.market.close_time).getTime() / 1000,
+    );
 
     const candlesticks = await kalshiFetch(
-      `/series/${seriesTicker}/markets/${marketId}/candlesticks`,
+      `/series/${seriesTicker ?? marketTicker}/markets/${marketId}/candlesticks`,
       {
         query: {
-          start_ts: start_ts,
-          end_ts: end_ts,
-          period_interval: 60,
+          start_ts,
+          end_ts,
+          period_interval,
         },
       },
     );
@@ -44,8 +39,9 @@ export async function GET(request: Request) {
         marketData,
         candlesticks,
         dateRange: {
-          start: oneMonthAgo.toISOString(),
-          end: now.toISOString(),
+          start: marketData.market.open_time,
+          end: marketData.market.close_time,
+          interval: period_interval,
         },
       },
       {

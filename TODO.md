@@ -1,5 +1,1 @@
-- fix sections of graphs
-
-===
-
-- Agent to check for None and send email to Nathan
+- ~~Kalshi should fetch all data by default~~

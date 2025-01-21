@@ -1,33 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { ChartDataPoint } from "../lib/risk-index/types";
-import {
-  fetchPolymarketData,
-  fetchMetaculusData,
-  fetchKalshiData,
-  fetchCdcData,
-} from "../lib/services";
-import { PREDICTION_MARKETS } from "../lib/config";
-import { LineGraph } from "../components/LineGraph";
-import {
-  combineDataSources,
-  HourlyDatasets,
-  WEIGHTS,
-} from "../lib/risk-index/combineDataSources";
-import { getProbabilityWord, getProbabilityColor } from "@/lib/probabilities";
-import { format } from "date-fns";
-import { BarGraph } from "@/components/BarGraph";
-import {
-  LinkIcon,
-  ChevronDownIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-} from "lucide-react";
+import { fetchKalshiData } from "../lib/services/kalshi";
+import { LinkIcon, ChevronDownIcon } from "lucide-react";
 import Image from "next/image";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@/lib/utils";
 import { MobileFriendlyTooltip } from "@/components/MobileFriendlyTooltip";
+import { useEffect, useState } from "react";
+import { ChartDataPoint } from "@/lib/risk-index/types";
+import { LineGraph } from "@/components/LineGraph";
+import { format } from "date-fns";
 
 function GraphTitle({
   title,
@@ -79,121 +61,19 @@ function GraphTitle({
 }
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [polymarketTimeSeries, setPolymarketTimeSeries] = useState<
-    ChartDataPoint[]
-  >([]);
-  const [metaculusTimeSeries, setMetaculusTimeSeries] = useState<
-    ChartDataPoint[]
-  >([]);
-  const [kalshiDelayTravel, setKalshiDelayTravel] = useState<ChartDataPoint[]>(
-    [],
-  );
-  const [cdcTimeSeries, setCdcTimeSeries] = useState<ChartDataPoint[]>([]);
-  const [kalshiCases, setKalshiCases] = useState<ChartDataPoint[]>([]);
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
-
+  const [kalshiData, setKalshiData] = useState<ChartDataPoint[]>([]);
   useEffect(() => {
-    setMounted(true);
-
-    // Load data from services
-    fetchPolymarketData(PREDICTION_MARKETS.POLYMARKET.SLUG)
-      .then((data) => {
-        setPolymarketTimeSeries(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Polymarket data:", error);
-      });
-
-    fetchMetaculusData(PREDICTION_MARKETS.METACULUS.QUESTION_ID)
-      .then((data) => {
-        setMetaculusTimeSeries(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Metaculus data:", error);
-      });
-
-    // Kalshi delay travel
     fetchKalshiData({
-      marketTicker: "KXCDCTRAVELH5-26-3",
-      seriesTicker: "KXCDCTRAVELH5",
-      marketId: "d02240fe-5c63-4378-885f-97657e90b783",
+      seriesTicker: "KXAITURING",
+      marketTicker: "AITURING",
+      marketId: "8a66420d-4b3c-446b-bd62-8386637ad844",
+      period_interval: 24 * 60,
     })
-      .then((data) => {
-        setKalshiDelayTravel(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Kalshi data:", error);
-      });
-
-    fetchCdcData()
-      .then(setCdcTimeSeries)
-      .catch((error) => {
-        console.error("Error loading CDC data:", error);
-      });
-
-    fetchKalshiData({
-      marketTicker: "KXH5N1CASES-25-10000",
-      seriesTicker: "KXH5N1CASES",
-      marketId: "23d87c35-5c09-4c30-a2b6-842c5b2865de",
-    })
-      .then((data) => {
-        setKalshiCases(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Kalshi cases data:", error);
+      .then(setKalshiData)
+      .catch((e) => {
+        console.error(e);
       });
   }, []);
-
-  // Check the length of each dataset to know when loading is complete
-  useEffect(() => {
-    if (
-      polymarketTimeSeries.length &&
-      metaculusTimeSeries.length &&
-      kalshiCases.length &&
-      kalshiDelayTravel.length
-    ) {
-      setIsLoading(false);
-    }
-  }, [
-    polymarketTimeSeries,
-    metaculusTimeSeries,
-    kalshiCases,
-    kalshiDelayTravel,
-    cdcTimeSeries,
-  ]);
-
-  // Calculate combined risk index and interpolated datasets when data updates
-  const { riskIndex, hourlyDatasets, pointMovement } = useMemo(() => {
-    if (isLoading)
-      return {
-        riskIndex: [],
-        hourlyDatasets: {} as HourlyDatasets,
-        pointMovement: 0,
-      };
-
-    if (metaculusTimeSeries.length === 0) {
-      setError("No data available from prediction markets");
-      return {
-        riskIndex: [],
-        hourlyDatasets: {} as HourlyDatasets,
-        pointMovement: 0,
-      };
-    }
-
-    setError(null);
-    return combineDataSources(
-      metaculusTimeSeries,
-      kalshiDelayTravel,
-      kalshiCases,
-    );
-  }, [isLoading, metaculusTimeSeries, kalshiDelayTravel, kalshiCases]);
-
-  if (!mounted) return null;
 
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-100 p-6 font-[family-name:var(--font-geist-sans)] text-foreground dark:bg-gray-900">
@@ -206,217 +86,28 @@ export default function Home() {
             domains?
           </MobileFriendlyTooltip>
         </h1>
-        <p className="mb-4 min-h-[108px] text-2xl text-gray-700 dark:text-gray-300">
-          {isLoading ? (
-            "Loading risk assessment..."
-          ) : error ? (
-            <span className="text-red-500">{error}</span>
-          ) : (
-            <>
-              <span
-                className={`mb-4 block text-4xl font-bold sm:text-6xl ${getProbabilityColor(
-                  riskIndex[riskIndex.length - 1].value / 100,
-                )}`}
-              >
-                {getProbabilityWord(
-                  riskIndex[riskIndex.length - 1].value / 100,
-                )}
-              </span>{" "}
-              Our risk index gives it{" "}
-              {riskIndex[riskIndex.length - 1].value.toFixed(0)} out of 100
-              (about {riskIndex[riskIndex.length - 1].value.toFixed(0)}%) as of{" "}
-              <span className="inline-flex items-center">
-                {format(new Date(), "MMMM d, yyyy")}
-                <MobileFriendlyTooltip>
-                  The index is an average of predictions from Polymarket,
-                  Metaculus, and Kalshi. Polymarket and Kalshi are real money
-                  prediction markets. Metaculus is a forecasting community with
-                  a good track record.
-                </MobileFriendlyTooltip>
-              </span>
-            </>
-          )}
-        </p>
       </header>
 
       <main className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-          <GraphTitle
-            title="H5N1 Risk Index"
-            tooltipContent={
-              <div className="space-y-2">
-                <p>
-                  Weighted average of multiple sources (below is each source and
-                  its weighting):
-                </p>
-                <ul className="list-none space-y-1.5">
-                  <li>
-                    <span className="font-medium">Metaculus</span>: Will CDC
-                    report 10,000+ cases by 2026?{" "}
-                    <span className="opacity-75">× {WEIGHTS.metaculus}</span>
-                  </li>
-                  <li>
-                    <span className="font-medium">Kalshi Travel</span>: Will CDC
-                    recommend delaying travel?{" "}
-                    <span className="opacity-75">
-                      × {WEIGHTS.kalshiDelayTravel}
-                    </span>
-                  </li>
-                  <li>
-                    <span className="font-medium">Kalshi Cases</span>: Will
-                    there be 10,000+ cases this year?{" "}
-                    <span className="opacity-75">× {WEIGHTS.kalshiCases}</span>
-                  </li>
-                </ul>
-              </div>
-            }
-          >
-            <div
-              className={cn(
-                "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-base",
-                Number(pointMovement) >= 0
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                  : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-              )}
-            >
-              {Number(pointMovement) >= 0 ? (
-                <ArrowUpIcon className="h-4 w-4" />
-              ) : (
-                <ArrowDownIcon className="h-4 w-4" />
-              )}
-              <span>{Math.abs(Number(pointMovement))} 24h</span>
-            </div>
-          </GraphTitle>
-          <LineGraph
-            data={riskIndex}
-            color="#ef4444"
-            label="Risk index value"
-            formatValue={(v) => `${v.toFixed(1)}%`}
-            domain={[0, 100]}
-            tickFormatter={dateSix}
-            tooltipLabelFormatter={dateOne}
-            tooltipFormatter={(value) => {
-              const point = riskIndex.find((p) => p.value === value);
-              if (!point?.date)
-                return [value.toFixed(1) + "%", "Risk index value"];
-
-              const meta = hourlyDatasets.meta?.find(
-                (p) => p.date === point.date,
-              );
-              const kalshiT = hourlyDatasets.travel?.find(
-                (p) => p.date === point.date,
-              );
-              const kalshiC = hourlyDatasets.cases?.find(
-                (p) => p.date === point.date,
-              );
-
-              return [
-                [
-                  `Risk index value: <b>${value.toFixed(1)}%</b>`,
-                  `Formed from an average of:`,
-                  `• 10,000 US cases before 2026: <b>${meta ? meta.value.toFixed(1) : "-"}%</b> (Metaculus × ${WEIGHTS.metaculus})`,
-                  `• 10,000 US cases this year: <b>${kalshiC ? kalshiC.value.toFixed(1) : "-"}%</b> (Kalshi × ${WEIGHTS.kalshiCases})`,
-                  `• CDC travel warning before 2026: <b>${kalshiT ? kalshiT.value.toFixed(1) : "-"}%</b> (Kalshi × ${WEIGHTS.kalshiDelayTravel})`,
-                ].join("<br />"),
-                "",
-              ];
-            }}
-          />
-        </div>
-
         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
           Included in index:
         </h3>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
             <GraphTitle
-              title="Will CDC report 10,000 or more H5 avian influenza cases in the United States before January 1, 2026?"
-              sourceUrl="https://www.metaculus.com/questions/30960/?sub-question=30732"
+              title="AI passes Turing test before 2030?"
+              sourceUrl="https://kalshi.com/markets/kxaituring/ai-turing-test"
               tooltipContent=""
             />
             <LineGraph
-              data={metaculusTimeSeries}
-              color="#10b981"
-              label="Metaculus Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              domain={[0, 100]}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateFour}
-            />
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Above 10,000 Bird Flu (H5N1) cases this year?"
-              sourceUrl="https://kalshi.com/markets/kxh5n1cases/h5n1-cases"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={kalshiCases}
+              data={kalshiData}
               color="#8b5cf6"
               label="Kalshi Prediction (%)"
               formatValue={(v) => `${v.toFixed(1)}%`}
               tickFormatter={dateFour}
               tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-            />
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Will the CDC recommend delaying non-essential travel due to H5 bird flu before 2026?"
-              sourceUrl="https://kalshi.com/markets/kxcdctravelh5/avian-flu-travel-warning"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={kalshiDelayTravel}
-              color="#8b5cf6"
-              label="Kalshi Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-            />
-          </div>
-        </div>
-
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-          Other useful indicators:
-        </h3>
-
-        {/* Grid of smaller graphs */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Another US State other than California declare a state of emergency over bird flu before February?"
-              sourceUrl="https://polymarket.com/event/another-state-declare-a-state-of-emergency-over-bird-flu-before-february"
-              tooltipContent="A state of emergence gives the Governor additional powers. It doesn't necessarily imply lockdowns or similar."
-            />
-            <LineGraph
-              data={polymarketTimeSeries}
-              color="#3b82f6"
-              label="Polymarket Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              domain={[0, 100]}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateFour}
-            />
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Monthly H5N1 Cases Worldwide"
-              sourceUrl="https://www.cdc.gov/bird-flu/php/avian-flu-summary/chart-epi-curve-ah5n1.html"
-              tooltipContent="Official CDC data on confirmed H5N1 cases"
-            />
-            <BarGraph
-              data={cdcTimeSeries}
-              color="#f97316"
-              label="Cases"
-              formatValue={(v) => v.toString()}
-              tickFormatter={dateFive}
-              tooltipLabelFormatter={dateThree}
+              domain={[60, 80]}
             />
           </div>
         </div>
@@ -431,7 +122,7 @@ export default function Home() {
             build another dashboard for some comparable risk. Your email will
             not be used for other purposes.
           </p>
-          <form
+          {/* <form
             className="mx-auto flex max-w-md flex-col gap-2 sm:flex-row"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -466,8 +157,8 @@ export default function Home() {
             >
               Update Me
             </button>
-          </form>
-          {submitStatus === "success" && (
+          </form> */}
+          {/* {submitStatus === "success" && (
             <p className="mt-2 text-green-600">
               Thanks! We&apos;ll send you an email if the risk levels change
               significantly or if we build another risk dashboard.
@@ -477,7 +168,7 @@ export default function Home() {
             <p className="mt-2 text-red-600">
               Something went wrong. Please try again.
             </p>
-          )}
+          )} */}
         </div>
         <div className="mb-8 mt-8 rounded-lg bg-white p-6 text-left shadow-lg dark:bg-gray-800">
           <h3 className="mb-6 text-2xl font-semibold">
@@ -627,18 +318,21 @@ export default function Home() {
 
         <span>&nbsp;</span>
 
-        <p>Last updated: {mounted ? new Date().toLocaleDateString() : ""}</p>
+        {/* <p>Last updated: {mounted ? new Date().toLocaleDateString() : ""}</p> */}
       </footer>
     </div>
   );
 }
 
-const dateOne = createSafeDateFormatter("MMM d - ha 'UTC'");
 const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
-const dateThree = createSafeDateFormatter("MMMM yyyy");
 const dateFour = createSafeDateFormatter("MMM d");
-const dateFive = createSafeDateFormatter("MMM ''yy");
-const dateSix = createSafeDateFormatter("MMM d ha");
+// const dateOne = createSafeDateFormatter("MMM d - ha 'UTC'");
+// const dateThree = createSafeDateFormatter("MMMM yyyy");
+// const dateFive = createSafeDateFormatter("MMM ''yy");
+// const dateSix = createSafeDateFormatter("MMM d ha");
+
+// const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
+// const dateFour = createSafeDateFormatter("MMM d");
 
 /**
  * This creates a safe date formatter that fails silently,
