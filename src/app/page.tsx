@@ -1,6 +1,7 @@
 "use client";
 
 import { fetchKalshiData } from "../lib/services/kalshi";
+import { fetchMetaculusData } from "../lib/services/metaculus";
 import { LinkIcon, ChevronDownIcon } from "lucide-react";
 import Image from "next/image";
 import * as Collapsible from "@radix-ui/react-collapsible";
@@ -62,6 +63,9 @@ function GraphTitle({
 
 export default function Home() {
   const [kalshiData, setKalshiData] = useState<ChartDataPoint[]>([]);
+  const [weakAgiData, setWeakAgiData] = useState<ChartDataPoint[]>([]);
+  const [fullAgiData, setFullAgiData] = useState<ChartDataPoint[]>([]);
+
   useEffect(() => {
     fetchKalshiData({
       seriesTicker: "KXAITURING",
@@ -70,6 +74,18 @@ export default function Home() {
       period_interval: 24 * 60,
     })
       .then(setKalshiData)
+      .catch((e) => {
+        console.error(e);
+      });
+
+    fetchMetaculusData(3479)
+      .then(setWeakAgiData)
+      .catch((e) => {
+        console.error(e);
+      });
+
+    fetchMetaculusData(5121)
+      .then(setFullAgiData)
       .catch((e) => {
         console.error(e);
       });
@@ -108,6 +124,42 @@ export default function Home() {
               tickFormatter={dateFour}
               tooltipLabelFormatter={dateTwo}
               domain={[60, 80]}
+            />
+          </div>
+
+          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+            <GraphTitle
+              title="Date Weakly General AI is Publicly Known"
+              sourceUrl="https://www.metaculus.com/questions/3479/date-weakly-general-ai-is-publicly-known/"
+              tooltipContent="When will we develop artificial general intelligence (AGI) - AI systems that match or exceed human-level intelligence across most domains?"
+            />
+            <LineGraph
+              data={weakAgiData}
+              color="#10b981"
+              label="Metaculus Prediction (%)"
+              formatValue={(v) => `${v.toFixed(1)}%`}
+              tickFormatter={dateFour}
+              tooltipLabelFormatter={dateTwo}
+              domain={[0, 100]}
+              showDistribution={true}
+            />
+          </div>
+
+          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+            <GraphTitle
+              title="Date of Artificial General Intelligence"
+              sourceUrl="https://www.metaculus.com/questions/5121/date-of-artificial-general-intelligence/"
+              tooltipContent="When will the first general AI system be devised, tested, and publicly announced?"
+            />
+            <LineGraph
+              data={fullAgiData}
+              color="#06b6d4"
+              label="Metaculus Prediction (%)"
+              formatValue={(v) => `${v.toFixed(1)}%`}
+              tickFormatter={dateFour}
+              tooltipLabelFormatter={dateTwo}
+              domain={[0, 100]}
+              showDistribution={true}
             />
           </div>
         </div>

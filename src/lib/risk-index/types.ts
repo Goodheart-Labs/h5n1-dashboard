@@ -1,6 +1,7 @@
 export type ChartDataPoint = {
   date: string;
   value: number;
+  range?: [number, number]; // [min, max]
 };
 
 export type PolymarketDataPoint = {
@@ -18,7 +19,10 @@ export type MetaculusResponse = {
       recency_weighted: {
         history: Array<{
           start_time: number;
-          means: number[];
+          means: number[] | null;
+          centers: number[] | null;
+          interval_lower_bounds: number[] | null;
+          interval_upper_bounds: number[] | null;
         }>;
       };
     };

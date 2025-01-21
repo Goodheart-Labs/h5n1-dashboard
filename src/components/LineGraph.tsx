@@ -1,17 +1,18 @@
 import {
-  LineChart,
+  ComposedChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
 } from "recharts";
 import { ChartDataPoint } from "../lib/risk-index/types";
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{ value: number }>;
+  payload?: Array<{ value: number | [number, number]; dataKey: string }>;
   label?: string;
   formatter: (value: number) => [string, string];
   labelFormatter: (date: string) => string;
@@ -26,7 +27,14 @@ function CustomTooltip({
 }: CustomTooltipProps) {
   if (!active || !payload || !payload[0]) return null;
 
-  const [content] = formatter(payload[0].value);
+  // Handle both single values and ranges
+  const mainValue = payload.find((p) => p.dataKey === "value")?.value as number;
+  const range = payload.find((p) => p.dataKey === "range")?.value as [
+    number,
+    number,
+  ];
+
+  const [content] = formatter(mainValue);
   const lines = content.split("<br />");
 
   return (
@@ -60,6 +68,11 @@ function CustomTooltip({
           </p>
         );
       })}
+      {range && (
+        <p className="mt-1 text-sm text-gray-500">
+          Range: {formatter(range[0])[0]} - {formatter(range[1])[0]}
+        </p>
+      )}
     </div>
   );
 }
@@ -73,6 +86,7 @@ export interface LineGraphProps {
   tooltipFormatter?: (value: number) => [string, string];
   tooltipLabelFormatter: (date: string) => string;
   domain?: [number, number];
+  showDistribution?: boolean;
 }
 
 export function LineGraph({
@@ -84,14 +98,19 @@ export function LineGraph({
   tooltipFormatter = (value: number) => [formatValue(value), label],
   tooltipLabelFormatter,
   domain,
+  showDistribution = false,
 }: LineGraphProps) {
+  // Check if all data points have range values when distribution is requested
+  const hasDistribution =
+    showDistribution && data.every((point) => point.range !== undefined);
+
   return (
     <div className="relative h-[320px] w-full">
       <div className="absolute left-0 top-0 text-sm text-gray-500 dark:text-gray-400">
         {label}
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
+        <ComposedChart
           data={data}
           margin={{
             top: 40,
@@ -140,9 +159,17 @@ export function LineGraph({
               />
             }
           />
+          {hasDistribution && (
+            <Area
+              type="monotone"
+              dataKey="range"
+              fill={color}
+              fillOpacity={0.2}
+              stroke="none"
+            />
+          )}
           <Line
-            type="step"
-            accentHeight={20}
+            type="monotone"
             dataKey="value"
             stroke={color}
             strokeWidth={2}
@@ -150,7 +177,7 @@ export function LineGraph({
             activeDot={{ r: 8 }}
             isAnimationActive={false}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
