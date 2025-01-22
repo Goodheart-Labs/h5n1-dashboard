@@ -44,5 +44,8 @@ next-env.d.ts
 .local-browsers/
 node_modules/playwright-core/.local-browsers/
 
+# Downloaded data
+/data/
+
 /keys
 .env*.local

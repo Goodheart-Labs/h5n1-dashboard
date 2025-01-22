@@ -6,6 +6,6 @@ export const PREDICTION_MARKETS = {
     QUESTION_ID: 30960,
   },
   MANIFOLD: {
-    SLUG: "will-there-be-more-than-1000-confir",
+    SLUG: "will-we-get-agi-before-2028-ff560f9e9346",
   },
 } as const;

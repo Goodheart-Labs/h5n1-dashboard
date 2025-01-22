@@ -94,3 +94,27 @@ export type CdcDataPoint = {
   Range: string;
   Month: string;
 } & Record<string, string>;
+
+export type ManifoldResponse = {
+  id: string;
+  question: string;
+  description: {
+    type: string;
+    content: Array<{
+      type: string;
+      content?: Array<{
+        text?: string;
+        type: string;
+      }>;
+    }>;
+  };
+  probability: number;
+  createdTime: number;
+  closeTime: number;
+  isResolved: boolean;
+  volume: number;
+  volume24Hours: number;
+  uniqueBettorCount: number;
+  lastUpdatedTime: number;
+  slug: string;
+};

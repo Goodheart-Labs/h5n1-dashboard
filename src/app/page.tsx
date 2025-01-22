@@ -2,6 +2,8 @@
 
 import { fetchKalshiData } from "../lib/services/kalshi";
 import { fetchMetaculusData } from "../lib/services/metaculus";
+import { fetchManifoldData } from "../lib/services/manifold";
+import { PREDICTION_MARKETS } from "@/lib/config";
 import { LinkIcon, ChevronDownIcon } from "lucide-react";
 import Image from "next/image";
 import * as Collapsible from "@radix-ui/react-collapsible";
@@ -65,6 +67,7 @@ export default function Home() {
   const [kalshiData, setKalshiData] = useState<ChartDataPoint[]>([]);
   const [weakAgiData, setWeakAgiData] = useState<ChartDataPoint[]>([]);
   const [fullAgiData, setFullAgiData] = useState<ChartDataPoint[]>([]);
+  const [manifoldData, setManifoldData] = useState<ChartDataPoint[]>([]);
 
   useEffect(() => {
     fetchKalshiData({
@@ -86,6 +89,12 @@ export default function Home() {
 
     fetchMetaculusData(5121)
       .then(setFullAgiData)
+      .catch((e) => {
+        console.error(e);
+      });
+
+    fetchManifoldData(PREDICTION_MARKETS.MANIFOLD.SLUG)
+      .then((data) => setManifoldData(data.history))
       .catch((e) => {
         console.error(e);
       });
@@ -160,6 +169,23 @@ export default function Home() {
               tooltipLabelFormatter={dateTwo}
               domain={[0, 100]}
               showDistribution={true}
+            />
+          </div>
+
+          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+            <GraphTitle
+              title="Will we get AGI before 2028?"
+              sourceUrl="https://manifold.markets/RemNi/will-we-get-agi-before-2028-ff560f9e9346"
+              tooltipContent="Manifold Markets prediction on AGI development before 2028"
+            />
+            <LineGraph
+              data={manifoldData}
+              color="#f97316"
+              label="Manifold Prediction (%)"
+              formatValue={(v) => `${(v * 100).toFixed(1)}%`}
+              tickFormatter={dateFour}
+              tooltipLabelFormatter={dateTwo}
+              domain={[0, 1]}
             />
           </div>
         </div>
