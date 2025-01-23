@@ -2,8 +2,11 @@
 
 import { fetchKalshiData } from "../lib/services/kalshi";
 import { fetchMetaculusData } from "../lib/services/metaculus";
-import { fetchManifoldData } from "../lib/services/manifold";
-import { PREDICTION_MARKETS } from "@/lib/config";
+import {
+  getManifoldGroupedData,
+  ManifoldGroupedData,
+  transformManifoldDataForChart,
+} from "../lib/services/manifold-grouped";
 import { LinkIcon, ChevronDownIcon } from "lucide-react";
 import Image from "next/image";
 import * as Collapsible from "@radix-ui/react-collapsible";
@@ -12,6 +15,7 @@ import { MobileFriendlyTooltip } from "@/components/MobileFriendlyTooltip";
 import { useEffect, useState } from "react";
 import { ChartDataPoint } from "@/lib/risk-index/types";
 import { LineGraph } from "@/components/LineGraph";
+import { BarGraph } from "@/components/BarGraph";
 import { format } from "date-fns";
 
 function GraphTitle({
@@ -67,7 +71,8 @@ export default function Home() {
   const [kalshiData, setKalshiData] = useState<ChartDataPoint[]>([]);
   const [weakAgiData, setWeakAgiData] = useState<ChartDataPoint[]>([]);
   const [fullAgiData, setFullAgiData] = useState<ChartDataPoint[]>([]);
-  const [manifoldData, setManifoldData] = useState<ChartDataPoint[]>([]);
+  const [manifoldGroupedData, setManifoldGroupedData] =
+    useState<ManifoldGroupedData | null>(null);
 
   useEffect(() => {
     fetchKalshiData({
@@ -93,8 +98,11 @@ export default function Home() {
         console.error(e);
       });
 
-    fetchManifoldData(PREDICTION_MARKETS.MANIFOLD.SLUG)
-      .then((data) => setManifoldData(data.history))
+    getManifoldGroupedData("agi-when-resolves-to-the-year-in-wh-d5c5ad8e4708")
+      .then((data) => {
+        console.log("Manifold grouped data:", data);
+        setManifoldGroupedData(data);
+      })
       .catch((e) => {
         console.error(e);
       });
@@ -174,19 +182,20 @@ export default function Home() {
 
           <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
             <GraphTitle
-              title="Will we get AGI before 2028?"
-              sourceUrl="https://manifold.markets/RemNi/will-we-get-agi-before-2028-ff560f9e9346"
-              tooltipContent="Manifold Markets prediction on AGI development before 2028"
+              title="When will AGI arrive? (Manifold Markets Distribution)"
+              sourceUrl="https://manifold.markets/ManifoldAI/agi-when-resolves-to-the-year-in-wh-d5c5ad8e4708"
+              tooltipContent="Distribution of predictions for when AGI will first pass a high-quality Turing test"
             />
-            <LineGraph
-              data={manifoldData}
-              color="#f97316"
-              label="Manifold Prediction (%)"
-              formatValue={(v) => `${(v * 100).toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 1]}
-            />
+            {manifoldGroupedData && (
+              <BarGraph
+                data={transformManifoldDataForChart(manifoldGroupedData)}
+                color="#f97316"
+                label="Probability (%)"
+                formatValue={(v) => `${v.toFixed(1)}%`}
+                tickFormatter={(text) => text}
+                tooltipLabelFormatter={(text) => text}
+              />
+            )}
           </div>
         </div>
       </main>
