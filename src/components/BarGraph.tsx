@@ -7,7 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChartDataPoint } from "../lib/risk-index/types";
+import { ChartDataPoint } from "../lib/types";
 import {
   Formatter,
   Payload,

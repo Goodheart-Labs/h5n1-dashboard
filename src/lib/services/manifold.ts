@@ -1,4 +1,4 @@
-import { ChartDataPoint, ManifoldResponse } from "../risk-index/types";
+import { ChartDataPoint, ManifoldResponse } from "../types";
 
 export type ManifoldMarketInfo = {
   title: string;

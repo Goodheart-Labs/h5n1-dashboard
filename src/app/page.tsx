@@ -13,7 +13,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@/lib/utils";
 import { MobileFriendlyTooltip } from "@/components/MobileFriendlyTooltip";
 import { useEffect, useState } from "react";
-import { ChartDataPoint } from "@/lib/risk-index/types";
+import { ChartDataPoint } from "@/lib/types";
 import { LineGraph } from "@/components/LineGraph";
 import { BarGraph } from "@/components/BarGraph";
 import { format } from "date-fns";

@@ -1,5 +1,5 @@
 import { parse } from "date-fns";
-import { CdcDataPoint, ChartDataPoint } from "../risk-index/types";
+import { CdcDataPoint, ChartDataPoint } from "../types";
 
 export async function fetchCdcData(): Promise<ChartDataPoint[]> {
   const data = await fetchFromAPI();

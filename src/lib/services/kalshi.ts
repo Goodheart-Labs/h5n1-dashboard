@@ -1,4 +1,4 @@
-import { KalshiResponse, ChartDataPoint } from "../risk-index/types";
+import { KalshiResponse, ChartDataPoint } from "../types";
 
 export async function fetchKalshiData({
   marketTicker,

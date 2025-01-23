@@ -1,4 +1,4 @@
-import { MetaculusResponse, ChartDataPoint } from "../risk-index/types";
+import { MetaculusResponse, ChartDataPoint } from "../types";
 
 export async function fetchMetaculusData(
   questionId: number,

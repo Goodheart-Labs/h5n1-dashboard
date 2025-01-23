@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Area,
 } from "recharts";
-import { ChartDataPoint } from "../lib/risk-index/types";
+import { ChartDataPoint } from "../lib/types";
 
 interface CustomTooltipProps {
   active?: boolean;
