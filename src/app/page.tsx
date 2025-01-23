@@ -180,6 +180,10 @@ export default function Home() {
             />
           </div>
 
+          <h3 className="col-span-2 mt-6 text-xl font-semibold text-gray-700 dark:text-gray-300">
+            Not included in index:
+          </h3>
+
           <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
             <GraphTitle
               title="When will AGI arrive? (Manifold Markets Distribution)"
