@@ -201,7 +201,7 @@ export default function Home() {
         <h1 className="my-4 text-2xl font-bold md:text-5xl">
           Will bird flu be the next COVID?{" "}
           <MobileFriendlyTooltip>
-            Will bird flu have an impact on people&apos;s lives on the same
+            Will H5N1 bird flu have an impact on people&apos;s lives on the same
             order of magnitude as covid? Will it cause a random person huge
             personal inconvenience?
           </MobileFriendlyTooltip>
@@ -246,8 +246,8 @@ export default function Home() {
             tooltipContent={
               <div className="space-y-2">
                 <p>
-                  Weighted average of multiple sources (below is each source and
-                  its weighting):
+                  Scaled average of multiple sources (below is each source and
+                  its scaling factor, see FAQ for more details):
                 </p>
                 <ul className="list-none space-y-1.5">
                   <li>
@@ -579,19 +579,6 @@ export default function Home() {
             If you want more people to see this dashboard today, a vote on
             Product Hunt would help
           </p>
-          <a
-            href="https://www.producthunt.com/posts/bird-flu-risk-dashboard?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-bird&#0045;flu&#0045;risk&#0045;dashboard"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=766429&theme=light"
-              alt="Bird Flu Risk Dashboard - Little chance of it being the next Covid | Product Hunt"
-              width={250}
-              height={54}
-              style={{ width: "250px", height: "54px" }}
-            />
-          </a>
         </div>
 
         <div className="mb-1">
