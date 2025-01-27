@@ -17,6 +17,31 @@ import { ChartDataPoint } from "@/lib/types";
 import { LineGraph } from "@/components/LineGraph";
 import { BarGraph } from "@/components/BarGraph";
 import { format } from "date-fns";
+import { CustomTooltip } from "@/components/CustomTooltip";
+
+const createSafeDateFormatter = (formatString: string) => (date: string) => {
+  try {
+    return format(new Date(date), formatString);
+  } catch {
+    return date;
+  }
+};
+
+const createSafeMillisecondDateFormatter =
+  (formatString: string) => (milliseconds: number) => {
+    try {
+      return format(new Date(milliseconds * 1000), formatString);
+    } catch {
+      return milliseconds.toString();
+    }
+  };
+
+const formatYearFromTimestamp = createSafeMillisecondDateFormatter("yyyy");
+const formatFullDateFromTimestamp =
+  createSafeMillisecondDateFormatter("yyyy-MM-dd");
+const formatMonthYear = createSafeDateFormatter("MMM yyyy");
+const formatMonthDayYear = createSafeDateFormatter("MMM d, yyyy");
+const formatMonthDay = createSafeDateFormatter("MMM d");
 
 function GraphTitle({
   title,
@@ -69,8 +94,12 @@ function GraphTitle({
 
 export default function Home() {
   const [kalshiData, setKalshiData] = useState<ChartDataPoint[]>([]);
-  const [weakAgiData, setWeakAgiData] = useState<ChartDataPoint[]>([]);
-  const [fullAgiData, setFullAgiData] = useState<ChartDataPoint[]>([]);
+  const [weakAgiData, setWeakAgiData] = useState<Awaited<
+    ReturnType<typeof fetchMetaculusData>
+  > | null>(null);
+  const [fullAgiData, setFullAgiData] = useState<Awaited<
+    ReturnType<typeof fetchMetaculusData>
+  > | null>(null);
   const [manifoldGroupedData, setManifoldGroupedData] =
     useState<ManifoldGroupedData | null>(null);
 
@@ -82,29 +111,26 @@ export default function Home() {
       period_interval: 24 * 60,
     })
       .then(setKalshiData)
-      .catch((e) => {
-        console.error(e);
+      .catch(() => {
+        // No error handling needed
       });
 
     fetchMetaculusData(3479)
       .then(setWeakAgiData)
-      .catch((e) => {
-        console.error(e);
+      .catch(() => {
+        // No error handling needed
       });
 
     fetchMetaculusData(5121)
       .then(setFullAgiData)
-      .catch((e) => {
-        console.error(e);
+      .catch(() => {
+        // No error handling needed
       });
 
     getManifoldGroupedData("agi-when-resolves-to-the-year-in-wh-d5c5ad8e4708")
-      .then((data) => {
-        console.log("Manifold grouped data:", data);
-        setManifoldGroupedData(data);
-      })
-      .catch((e) => {
-        console.error(e);
+      .then(setManifoldGroupedData)
+      .catch(() => {
+        // No error handling needed
       });
   }, []);
 
@@ -129,36 +155,36 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
             <GraphTitle
-              title="AI passes Turing test before 2030?"
-              sourceUrl="https://kalshi.com/markets/kxaituring/ai-turing-test"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={kalshiData}
-              color="#8b5cf6"
-              label="Kalshi Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[60, 80]}
-            />
-          </div>
-
-          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
               title="Date Weakly General AI is Publicly Known"
               sourceUrl="https://www.metaculus.com/questions/3479/date-weakly-general-ai-is-publicly-known/"
               tooltipContent="When will we develop artificial general intelligence (AGI) - AI systems that match or exceed human-level intelligence across most domains?"
             />
             <LineGraph
-              data={weakAgiData}
+              data={weakAgiData ? weakAgiData.data : []}
               color="#10b981"
-              label="Metaculus Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-              showDistribution={true}
+              label="Metaculus Prediction (Year)"
+              xAxisProps={{
+                tickFormatter: formatMonthYear,
+              }}
+              yAxisProps={{
+                tickFormatter: formatYearFromTimestamp,
+                scale: "log",
+                domain: weakAgiData
+                  ? [
+                      weakAgiData.question.scaling.range_min,
+                      weakAgiData.question.scaling.range_max,
+                    ]
+                  : undefined,
+              }}
+              tooltip={
+                <CustomTooltip
+                  formatter={(value) => [
+                    formatFullDateFromTimestamp(value),
+                    "",
+                  ]}
+                  labelFormatter={formatMonthDayYear}
+                />
+              }
             />
           </div>
 
@@ -169,14 +195,50 @@ export default function Home() {
               tooltipContent="When will the first general AI system be devised, tested, and publicly announced?"
             />
             <LineGraph
-              data={fullAgiData}
+              data={fullAgiData ? fullAgiData.data : []}
               color="#06b6d4"
-              label="Metaculus Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-              showDistribution={true}
+              label="Metaculus Prediction (Year)"
+              xAxisProps={{
+                tickFormatter: formatMonthYear,
+              }}
+              yAxisProps={{
+                tickFormatter: formatYearFromTimestamp,
+                scale: "linear",
+                domain: fullAgiData
+                  ? [
+                      fullAgiData.question.scaling.range_min,
+                      fullAgiData.question.scaling.range_max,
+                    ]
+                  : undefined,
+              }}
+              tooltip={
+                <CustomTooltip
+                  formatter={(value) => [
+                    formatFullDateFromTimestamp(value),
+                    "",
+                  ]}
+                  labelFormatter={formatMonthDayYear}
+                />
+              }
+            />
+          </div>
+
+          <div className="col-span-2 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+            <GraphTitle
+              title="AI passes Turing test before 2030?"
+              sourceUrl="https://kalshi.com/markets/kxaituring/ai-turing-test"
+              tooltipContent=""
+            />
+            <LineGraph
+              data={kalshiData}
+              color="#8b5cf6"
+              label="Kalshi Prediction (%)"
+              xAxisProps={{
+                tickFormatter: formatMonthDay,
+              }}
+              yAxisProps={{
+                domain: [60, 80],
+              }}
             />
           </div>
 
@@ -213,53 +275,6 @@ export default function Home() {
             build another dashboard for some comparable risk. Your email will
             not be used for other purposes.
           </p>
-          {/* <form
-            className="mx-auto flex max-w-md flex-col gap-2 sm:flex-row"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const email = (e.target as HTMLFormElement).email.value;
-
-              try {
-                const res = await fetch("/api/email", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email }),
-                });
-
-                if (!res.ok) throw new Error();
-
-                setSubmitStatus("success");
-                (e.target as HTMLFormElement).reset();
-              } catch {
-                setSubmitStatus("error");
-              }
-            }}
-          >
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-              required
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Update Me
-            </button>
-          </form> */}
-          {/* {submitStatus === "success" && (
-            <p className="mt-2 text-green-600">
-              Thanks! We&apos;ll send you an email if the risk levels change
-              significantly or if we build another risk dashboard.
-            </p>
-          )}
-          {submitStatus === "error" && (
-            <p className="mt-2 text-red-600">
-              Something went wrong. Please try again.
-            </p>
-          )} */}
         </div>
         <div className="mb-8 mt-8 rounded-lg bg-white p-6 text-left shadow-lg dark:bg-gray-800">
           <h3 className="mb-6 text-2xl font-semibold">
@@ -320,22 +335,6 @@ export default function Home() {
             </Collapsible.Root>
           </div>
         </div>
-        {/* Poll link temporarily removed while we transition to AGI focus
-        <div className="mb-8 text-gray-600 dark:text-gray-300">
-          <p className="mb-2">
-            If you want to vote for other things to be included in the index or
-            to see other data sources on this site,{" "}
-            <a
-              href="https://viewpoints.xyz/polls/h5n1-dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline hover:text-blue-600"
-            >
-              please vote using this 2 minute poll
-            </a>
-          </p>
-        </div>
-        */}
 
         <div className="mb-1 text-center">
           <a
@@ -408,33 +407,7 @@ export default function Home() {
         </div>
 
         <span>&nbsp;</span>
-
-        {/* <p>Last updated: {mounted ? new Date().toLocaleDateString() : ""}</p> */}
       </footer>
     </div>
   );
-}
-
-const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
-const dateFour = createSafeDateFormatter("MMM d");
-// const dateOne = createSafeDateFormatter("MMM d - ha 'UTC'");
-// const dateThree = createSafeDateFormatter("MMMM yyyy");
-// const dateFive = createSafeDateFormatter("MMM ''yy");
-// const dateSix = createSafeDateFormatter("MMM d ha");
-
-// const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
-// const dateFour = createSafeDateFormatter("MMM d");
-
-/**
- * This creates a safe date formatter that fails silently,
- * and returns an empty string if the date is invalid.
- */
-function createSafeDateFormatter(dateFormat: string) {
-  return (date: string) => {
-    try {
-      return format(new Date(date), dateFormat);
-    } catch {
-      return "";
-    }
-  };
 }

@@ -1,1 +1,4 @@
-- ~~Kalshi should fetch all data by default~~
+- [-] reintroduce tooltips
+- [-] fix AGI index code
+- [-] show Metaculus graphs with logarithmic Y axis
+- [-] reintroduce distributions

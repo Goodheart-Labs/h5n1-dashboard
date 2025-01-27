@@ -1,4 +1,4 @@
-const METACULUS_API = "https://www.metaculus.com/api2";
+const METACULUS_API = "https://www.metaculus.com/api";
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     const questionResponse = await fetch(
-      `${METACULUS_API}/questions/${questionId}`,
+      `${METACULUS_API}/posts/${questionId}`,
       {
         headers: {
           Accept: "application/json",
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     }
 
     const questionData = await questionResponse.json();
+
     return Response.json(questionData, {
       headers: {
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=3600",
