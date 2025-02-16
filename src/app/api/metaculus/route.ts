@@ -1,4 +1,4 @@
-const METACULUS_API = "https://www.metaculus.com/api2";
+const METACULUS_API = "https://www.metaculus.com/api";
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     const questionResponse = await fetch(
-      `${METACULUS_API}/questions/${questionId}`,
+      `${METACULUS_API}/posts/${questionId}`,
       {
         headers: {
           Accept: "application/json",

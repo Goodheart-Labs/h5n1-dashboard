@@ -14,11 +14,21 @@ export type PolymarketResponse = {
 
 export type MetaculusResponse = {
   question: {
+    id: number;
+    scaling: {
+      range_min: number;
+      range_max: number;
+      zero_point: number;
+    };
     aggregations: {
       recency_weighted: {
         history: Array<{
           start_time: number;
-          means: number[];
+          end_time: number;
+          means: number[] | null;
+          centers: number[];
+          interval_lower_bounds: number[] | null;
+          interval_upper_bounds: number[] | null;
         }>;
       };
     };
