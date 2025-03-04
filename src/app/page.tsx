@@ -152,7 +152,6 @@ export default function Home() {
   // Check the length of each dataset to know when loading is complete
   useEffect(() => {
     if (
-      polymarketTimeSeries.length &&
       metaculusTimeSeries.length &&
       kalshiCases.length &&
       kalshiDelayTravel.length
