@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ChartDataPoint } from "../lib/risk-index/types";
 import {
-  fetchPolymarketData,
   fetchMetaculusData,
   fetchKalshiData,
   fetchCdcData,
@@ -82,9 +81,6 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [polymarketTimeSeries, setPolymarketTimeSeries] = useState<
-    ChartDataPoint[]
-  >([]);
   const [metaculusTimeSeries, setMetaculusTimeSeries] = useState<
     ChartDataPoint[]
   >([]);
@@ -99,15 +95,6 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-
-    // Load data from services
-    fetchPolymarketData(PREDICTION_MARKETS.POLYMARKET.SLUG)
-      .then((data) => {
-        setPolymarketTimeSeries(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Polymarket data:", error);
-      });
 
     fetchMetaculusData(PREDICTION_MARKETS.METACULUS.QUESTION_ID)
       .then((data) => {
@@ -158,13 +145,7 @@ export default function Home() {
     ) {
       setIsLoading(false);
     }
-  }, [
-    polymarketTimeSeries,
-    metaculusTimeSeries,
-    kalshiCases,
-    kalshiDelayTravel,
-    cdcTimeSeries,
-  ]);
+  }, [metaculusTimeSeries, kalshiCases, kalshiDelayTravel, cdcTimeSeries]);
 
   // Calculate combined risk index and interpolated datasets when data updates
   const { riskIndex, hourlyDatasets, pointMovement } = useMemo(() => {
@@ -386,23 +367,6 @@ export default function Home() {
 
         {/* Grid of smaller graphs */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Another US State other than California declare a state of emergency over bird flu before February?"
-              sourceUrl="https://polymarket.com/event/another-state-declare-a-state-of-emergency-over-bird-flu-before-february"
-              tooltipContent="A state of emergence gives the Governor additional powers. It doesn't necessarily imply lockdowns or similar."
-            />
-            <LineGraph
-              data={polymarketTimeSeries}
-              color="#3b82f6"
-              label="Polymarket Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              domain={[0, 100]}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateFour}
-            />
-          </div>
-
           <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
             <GraphTitle
               title="Monthly H5N1 Cases Worldwide"

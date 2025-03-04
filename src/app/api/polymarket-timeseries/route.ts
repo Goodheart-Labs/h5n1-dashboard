@@ -12,6 +12,9 @@ export async function GET(request: Request) {
     // Note! this actually expects a clubTokenId
     const marketId = searchParams.get("marketId");
 
+    const startTs = searchParams.get("startTs");
+    const endTs = searchParams.get("endTs");
+
     if (!marketId) {
       return NextResponse.json(
         { error: "Market ID is required" },
@@ -20,11 +23,22 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(`${CLOB_API}/prices-history`);
-    url.search = new URLSearchParams({
+    const params = new URLSearchParams({
       market: marketId,
-      interval: "1m",
       fidelity: "60",
-    }).toString();
+    });
+
+    // If user passed start and end time use that
+    if (startTs && endTs) {
+      // console.log("Setting start and end time");
+      params.set("startTs", startTs);
+      params.set("endTs", endTs);
+    } else {
+      params.set("interval", "1m");
+    }
+
+    // Add the params to the url
+    url.search = params.toString();
 
     const timeseriesResponse = await fetch(url, {
       headers: {
