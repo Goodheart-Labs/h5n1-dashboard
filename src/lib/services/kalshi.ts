@@ -29,7 +29,7 @@ async function fetchFromAPI({
   return response.json();
 }
 
-function transformKalshiData(data: KalshiResponse): ChartDataPoint[] {
+export function transformKalshiData(data: KalshiResponse): ChartDataPoint[] {
   if (!data?.candlesticks?.candlesticks?.length) {
     return [];
   }
