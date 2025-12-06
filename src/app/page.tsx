@@ -16,7 +16,6 @@ import {
 } from "../lib/risk-index/combineDataSources";
 import { getProbabilityWord, getProbabilityColor } from "@/lib/probabilities";
 import { format } from "date-fns";
-import { BarGraph } from "@/components/BarGraph";
 import {
   LinkIcon,
   ChevronDownIcon,
@@ -365,24 +364,6 @@ export default function Home() {
           Other useful indicators:
         </h3>
 
-        {/* Grid of smaller graphs */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Monthly H5N1 Cases Worldwide"
-              sourceUrl="https://www.cdc.gov/bird-flu/php/avian-flu-summary/chart-epi-curve-ah5n1.html"
-              tooltipContent="Official CDC data on confirmed H5N1 cases"
-            />
-            <BarGraph
-              data={cdcTimeSeries}
-              color="#f97316"
-              label="Cases"
-              formatValue={(v) => v.toString()}
-              tickFormatter={dateFive}
-              tooltipLabelFormatter={dateThree}
-            />
-          </div>
-        </div>
       </main>
 
       {/* Footer */}
@@ -602,9 +583,7 @@ export default function Home() {
 
 const dateOne = createSafeDateFormatter("MMM d - ha 'UTC'");
 const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
-const dateThree = createSafeDateFormatter("MMMM yyyy");
 const dateFour = createSafeDateFormatter("MMM d");
-const dateFive = createSafeDateFormatter("MMM ''yy");
 const dateSix = createSafeDateFormatter("MMM d ha");
 
 /**
