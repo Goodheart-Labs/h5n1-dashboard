@@ -18,8 +18,8 @@ export async function GET(request: Request) {
 
     const openTime = new Date(marketData.market.open_time);
     const now = new Date();
-    const oneMonthAgo = new Date(openTime);
-    oneMonthAgo.setMonth(openTime.getMonth() - 1);
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(now.getMonth() - 1);
 
     // Round to nearest hour
     now.setMinutes(0, 0, 0);
