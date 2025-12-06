@@ -16,7 +16,6 @@ export async function GET(request: Request) {
   try {
     const marketData = await kalshiFetch(`/markets/${marketTicker}`);
 
-    const openTime = new Date(marketData.market.open_time);
     const now = new Date();
     const oneMonthAgo = new Date(now);
     oneMonthAgo.setMonth(now.getMonth() - 1);
