@@ -363,7 +363,6 @@ export default function Home() {
         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
           Other useful indicators:
         </h3>
-
       </main>
 
       {/* Footer */}

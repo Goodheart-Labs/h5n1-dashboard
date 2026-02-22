@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { config } from "./config";
+import { getConfig } from "./config";
 
 export async function kalshiFetch(
   path: string,
@@ -16,6 +16,7 @@ export async function kalshiFetch(
   const timestamp = Date.now().toString();
   const method = restInit.method || "GET";
 
+  const config = getConfig();
   const message = Buffer.from(timestamp + method + path + queryString, "utf-8");
   const key = crypto.createPrivateKey(config.privateKey);
 
