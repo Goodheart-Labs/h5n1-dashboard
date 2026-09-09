@@ -1,0 +1,13 @@
+{
+  "pulled_at": "2026-09-09T21:32:33.424Z",
+  "request": {
+    "ticker": "KXH5N1CASES-25-10000",
+    "series": "KXH5N1CASES",
+    "id": "23d87c35-5c09-4c30-a2b6-842c5b2865de",
+    "name": "kalshi_cases_10000_2025",
+    "start_ts": 1730415600,
+    "end_ts": 1767834000
+  },
+  "detail": null,
+  "candles": null
+}

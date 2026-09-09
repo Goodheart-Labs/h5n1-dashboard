@@ -1,0 +1,56 @@
+{
+  "built_at": "2026-09-09T21:42:05.796Z",
+  "note": "Frozen copy of the H5N1 risk dashboard data. Sources were captured by the Wayback Machine from this site's own API routes between 2025-01-08 and 2025-02-08; the underlying markets have since closed and their APIs no longer serve history.",
+  "weights": {
+    "metaculus": 0.5,
+    "kalshiDelayTravel": 0.1,
+    "kalshiCases": 0.5
+  },
+  "formula": "index = (metaculus*0.5 + kalshiTravel*0.1 + kalshiCases*0.5) / 3, hourly, linear interpolation between source points",
+  "series": {
+    "riskIndex": {
+      "from": "2024-12-28T19:00:00.000Z",
+      "to": "2025-02-05T02:00:00.000Z",
+      "points": 920
+    },
+    "metaculus": {
+      "from": "2024-12-14T01:33:49.547Z",
+      "to": "2025-02-05T02:18:06.515Z",
+      "points": 72,
+      "question": "Will CDC report 10,000 or more H5 avian influenza cases in the United States before January 1, 2026?",
+      "url": "https://www.metaculus.com/questions/30960/",
+      "resolution": "No"
+    },
+    "kalshiCases": {
+      "from": "2024-12-28T19:00:00.000Z",
+      "to": "2025-02-07T18:00:00.000Z",
+      "points": 984,
+      "market": "KXH5N1CASES-25-10000: Above 10,000 US bird flu (H5N1) cases in 2025?",
+      "url": "https://kalshi.com/markets/kxh5n1cases",
+      "resolution": "No"
+    },
+    "kalshiTravel": {
+      "from": "2024-12-05T16:00:00.000Z",
+      "to": "2025-02-07T01:00:00.000Z",
+      "points": 1522,
+      "market": "KXCDCTRAVELH5-26-3: Will the CDC recommend delaying non-essential travel due to H5 bird flu before 2026?",
+      "url": "https://kalshi.com/markets/kxcdctravelh5",
+      "resolution": "No"
+    },
+    "polymarket": {
+      "from": "2025-01-08T13:00:03.000Z",
+      "to": "2025-02-01T11:00:04.000Z",
+      "points": 575,
+      "market": "Another state declare a state of emergency over bird flu before February (2025)?",
+      "url": "https://polymarket.com/event/another-state-declare-a-state-of-emergency-over-bird-flu-before-february",
+      "resolution": "No"
+    },
+    "cdc": {
+      "from": "2020-01-01T00:00:00.000Z",
+      "to": "2024-12-01T00:00:00.000Z",
+      "points": 60,
+      "source": "https://www.cdc.gov/bird-flu/php/avian-flu-summary/chart-epi-curve-ah5n1.html",
+      "captured": "2025-01-24"
+    }
+  }
+}
