@@ -1,0 +1,13 @@
+{
+  "pulled_at": "2026-09-09T21:32:33.713Z",
+  "request": {
+    "ticker": "KXCDCTRAVELH5-26-3",
+    "series": "KXCDCTRAVELH5",
+    "id": "d02240fe-5c63-4378-885f-97657e90b783",
+    "name": "kalshi_cdc_travel_before_2026",
+    "start_ts": 1730415600,
+    "end_ts": 1767834000
+  },
+  "detail": null,
+  "candles": null
+}

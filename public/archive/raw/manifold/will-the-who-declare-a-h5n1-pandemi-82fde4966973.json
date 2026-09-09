@@ -1,0 +1,49 @@
+{
+  "id": "bWKSnmhmzIKJhOmqygMy",
+  "creatorId": "fSrex43BDjeneNZ4ZLfxllSb8b42",
+  "creatorUsername": "NcyRocks",
+  "creatorName": "N.C. Young",
+  "createdTime": 1675631802981,
+  "creatorAvatarUrl": "https://firebasestorage.googleapis.com/v0/b/mantic-markets.appspot.com/o/user-images%2FNcyRocks%2F9Ig05uUQt5.JPG?alt=media&token=58552b1f-4461-43f1-b5d6-bd3a13952b1c",
+  "closeTime": 1893409200000,
+  "question": "Will the WHO declare an H5N1 pandemic before 2030?",
+  "slug": "will-the-who-declare-a-h5n1-pandemi-82fde4966973",
+  "url": "https://manifold.markets/NcyRocks/will-the-who-declare-a-h5n1-pandemi-82fde4966973",
+  "pool": { "NO": 5105.490675581307, "YES": 20743.801439721654 },
+  "probability": 0.18297822328343005,
+  "p": 0.47642556983429346,
+  "totalLiquidity": 10000,
+  "outcomeType": "BINARY",
+  "mechanism": "cpmm-1",
+  "volume": 31573.382499764542,
+  "volume24Hours": 0,
+  "isResolved": false,
+  "uniqueBettorCount": 73,
+  "lastUpdatedTime": 1783465290895,
+  "lastBetTime": 1783465290895,
+  "lastCommentTime": 1735938876521,
+  "token": "MANA",
+  "description": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "paragraph",
+        "content": [
+          { "text": "Feb 6, 11:16am: ", "type": "text" },
+          {
+            "text": "Will the WHO declare a H5N1 pandemic before 2030?",
+            "type": "text",
+            "marks": [{ "type": "strike" }]
+          },
+          {
+            "text": " → Will the WHO declare an H5N1 pandemic before 2030?",
+            "type": "text"
+          }
+        ]
+      }
+    ]
+  },
+  "coverImageUrl": "https://firebasestorage.googleapis.com/v0/b/mantic-markets.appspot.com/o/user-images%2Fdefault%2FivTaUM5KCP.svg?alt=media&token=05fcde50-cf1d-4c86-9d90-c620936eae78",
+  "groupSlugs": ["h5n1-bird-flu"],
+  "textDescription": "Feb 6, 11:16am: Will the WHO declare a H5N1 pandemic before 2030? → Will the WHO declare an H5N1 pandemic before 2030?"
+}

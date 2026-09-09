@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "H5N1 Risk Dashboard",
+  title: "H5N1 Risk Dashboard (archived)",
   description:
-    "Real-time monitoring of avian influenza trends and risk assessment",
+    "Bird flu risk index frozen at February 2025, plus what open prediction markets say now.",
 };
 
 export default function RootLayout({

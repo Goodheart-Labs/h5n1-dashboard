@@ -1,0 +1,22 @@
+{
+  "event": {
+    "available_on_brokers": false,
+    "category": "Health",
+    "collateral_return_type": "",
+    "event_ticker": "KXH5N1CASES-25",
+    "exchange_index": 0,
+    "last_updated_ts": "0001-01-01T00:00:00Z",
+    "mutually_exclusive": false,
+    "series_ticker": "KXH5N1CASES",
+    "settlement_sources": [
+      {
+        "name": "CDC",
+        "url": "https://www.cdc.gov/bird-flu/php/avian-flu-summary/chart-epi-curve-ah5n1.html"
+      }
+    ],
+    "strike_period": "",
+    "sub_title": "In 2025",
+    "title": "US Bird flu (H5N1) cases in 2025?"
+  },
+  "markets": []
+}

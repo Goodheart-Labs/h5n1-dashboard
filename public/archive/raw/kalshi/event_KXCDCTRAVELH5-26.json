@@ -1,0 +1,22 @@
+{
+  "event": {
+    "available_on_brokers": false,
+    "category": "Health",
+    "collateral_return_type": "",
+    "event_ticker": "KXCDCTRAVELH5-26",
+    "exchange_index": 0,
+    "last_updated_ts": "0001-01-01T00:00:00Z",
+    "mutually_exclusive": false,
+    "series_ticker": "KXCDCTRAVELH5",
+    "settlement_sources": [
+      {
+        "name": "CDC",
+        "url": "https://wwwnc.cdc.gov/travel/notices#travel-notice-definitions"
+      }
+    ],
+    "strike_period": "",
+    "sub_title": "Before 2026",
+    "title": "Will the CDC recommend delaying non-essential travel due to H5 bird flu in 2025?"
+  },
+  "markets": []
+}

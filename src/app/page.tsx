@@ -1,601 +1,289 @@
-"use client";
-
-import React, { useState, useEffect, useMemo } from "react";
-import { ChartDataPoint } from "../lib/risk-index/types";
-import {
-  fetchMetaculusData,
-  fetchKalshiData,
-  fetchCdcData,
-} from "../lib/services";
-import { PREDICTION_MARKETS } from "../lib/config";
-import { LineGraph } from "../components/LineGraph";
-import {
-  combineDataSources,
-  HourlyDatasets,
-  WEIGHTS,
-} from "../lib/risk-index/combineDataSources";
+import { getLiveMarkets, LiveMarket } from "@/lib/live-markets";
 import { getProbabilityWord, getProbabilityColor } from "@/lib/probabilities";
-import { format } from "date-fns";
-import {
-  LinkIcon,
-  ChevronDownIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-} from "lucide-react";
-import Image from "next/image";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import { cn } from "@/lib/utils";
-import { MobileFriendlyTooltip } from "@/components/MobileFriendlyTooltip";
+import { ArchivedCharts } from "@/components/ArchivedCharts";
+import { Faq } from "@/components/Faq";
+import { LinkIcon } from "lucide-react";
+import riskIndex from "@/data/archive/risk_index.json";
+import components from "@/data/archive/risk_index_components.json";
+import metaculus from "@/data/archive/metaculus.json";
+import kalshiCases from "@/data/archive/kalshi_cases.json";
+import kalshiTravel from "@/data/archive/kalshi_travel.json";
+import polymarket from "@/data/archive/polymarket.json";
+import cdc from "@/data/archive/cdc_monthly.json";
+import manifest from "@/data/archive/manifest.json";
 
-function GraphTitle({
-  title,
-  sourceUrl,
-  tooltipContent,
-  children,
-}: {
-  title: string;
-  sourceUrl?: string;
-  tooltipContent?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  const sharedClasses =
-    "text-pretty text-xl font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100";
-  const TitleComponent = sourceUrl ? (
-    <a
-      href={sourceUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group"
-    >
-      <h2
-        className={cn(
-          sharedClasses,
-          "group-hover:text-blue-600 dark:group-hover:text-blue-400",
-        )}
-      >
-        {title}
-        <LinkIcon className="ml-1 inline-block h-3 w-3 opacity-50 group-hover:opacity-60" />
-      </h2>
-    </a>
-  ) : (
-    <h2 className={sharedClasses}>{title}</h2>
-  );
+// Live market numbers are re-fetched at most hourly; everything else is static.
+export const revalidate = 3600;
 
+const RAW_DOWNLOADS = [
+  {
+    name: "Metaculus history (8 Feb 2025 capture)",
+    path: "/archive/raw/wayback/metaculus_30960_20250208.json",
+  },
+  {
+    name: "Kalshi 10,000-cases candlesticks (8 Feb 2025 capture)",
+    path: "/archive/raw/wayback/kalshi_cases_20250208.json",
+  },
+  {
+    name: "Kalshi travel-warning candlesticks (8 Feb 2025 capture)",
+    path: "/archive/raw/wayback/kalshi_travel_20250208.json",
+  },
+  {
+    name: "Polymarket state-of-emergency price history",
+    path: "/archive/raw/wayback/polymarket_timeseries_20250208.json",
+  },
+  {
+    name: "CDC monthly cases table (24 Jan 2025 capture)",
+    path: "/archive/raw/wayback/cdc_data_20250124.json",
+  },
+  {
+    name: "Rebuilt index and inputs: manifest with provenance",
+    path: "/archive/data/manifest.json",
+  },
+  { name: "Rebuilt index, hourly", path: "/archive/data/risk_index.json" },
+];
+
+const utcDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+const utcMonth = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    year: "numeric",
+  });
+const utcStamp = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }) + " UTC";
+
+function pct(p: number | null) {
+  return p == null ? "–" : `${Math.round(p * 100)}%`;
+}
+
+function MarketCard({ m }: { m: LiveMarket }) {
   return (
-    <div className="mb-2 grid gap-1">
-      <div className="inline-flex items-center justify-between gap-1">
-        <div className="flex w-full items-center justify-start gap-2">
-          {TitleComponent}
-          {children}
-        </div>
-        {tooltipContent && (
-          <MobileFriendlyTooltip>{tooltipContent}</MobileFriendlyTooltip>
-        )}
+    <div className="flex flex-col gap-2 rounded-lg bg-white p-5 shadow-lg dark:bg-gray-800">
+      <div className="flex items-start justify-between gap-3">
+        <a
+          href={m.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group"
+        >
+          <h3 className="text-pretty font-semibold leading-tight text-gray-900 group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400">
+            {m.title}
+            <LinkIcon className="ml-1 inline-block h-3 w-3 opacity-50" />
+          </h3>
+        </a>
+        <span
+          className={`shrink-0 text-2xl ${m.probability == null ? "text-gray-400" : getProbabilityColor(m.probability)}`}
+        >
+          {pct(m.probability)}
+        </span>
       </div>
+      {m.rows && (
+        <table className="text-sm text-gray-700 dark:text-gray-300">
+          <tbody>
+            {m.rows.map((r) => (
+              <tr key={r.label}>
+                <td className="pr-4">{r.label}</td>
+                <td className="text-right font-mono">{pct(r.probability)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        {m.source}
+        {m.closes ? ` · closes ${utcMonth(m.closes)}` : ""}
+        {m.note ? ` · ${m.note}` : ""}
+      </p>
     </div>
   );
 }
 
-export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [metaculusTimeSeries, setMetaculusTimeSeries] = useState<
-    ChartDataPoint[]
-  >([]);
-  const [kalshiDelayTravel, setKalshiDelayTravel] = useState<ChartDataPoint[]>(
-    [],
-  );
-  const [cdcTimeSeries, setCdcTimeSeries] = useState<ChartDataPoint[]>([]);
-  const [kalshiCases, setKalshiCases] = useState<ChartDataPoint[]>([]);
-  const [submitStatus, setSubmitStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
-
-  useEffect(() => {
-    setMounted(true);
-
-    fetchMetaculusData(PREDICTION_MARKETS.METACULUS.QUESTION_ID)
-      .then((data) => {
-        setMetaculusTimeSeries(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Metaculus data:", error);
-      });
-
-    // Kalshi delay travel
-    fetchKalshiData({
-      marketTicker: "KXCDCTRAVELH5-26-3",
-      seriesTicker: "KXCDCTRAVELH5",
-      marketId: "d02240fe-5c63-4378-885f-97657e90b783",
-    })
-      .then((data) => {
-        setKalshiDelayTravel(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Kalshi data:", error);
-      });
-
-    fetchCdcData()
-      .then(setCdcTimeSeries)
-      .catch((error) => {
-        console.error("Error loading CDC data:", error);
-      });
-
-    fetchKalshiData({
-      marketTicker: "KXH5N1CASES-25-10000",
-      seriesTicker: "KXH5N1CASES",
-      marketId: "23d87c35-5c09-4c30-a2b6-842c5b2865de",
-    })
-      .then((data) => {
-        setKalshiCases(data);
-      })
-      .catch((error) => {
-        console.error("Error loading Kalshi cases data:", error);
-      });
-  }, []);
-
-  // Check the length of each dataset to know when loading is complete
-  useEffect(() => {
-    if (
-      metaculusTimeSeries.length &&
-      kalshiCases.length &&
-      kalshiDelayTravel.length
-    ) {
-      setIsLoading(false);
-    }
-  }, [metaculusTimeSeries, kalshiCases, kalshiDelayTravel, cdcTimeSeries]);
-
-  // Calculate combined risk index and interpolated datasets when data updates
-  const { riskIndex, hourlyDatasets, pointMovement } = useMemo(() => {
-    if (isLoading)
-      return {
-        riskIndex: [],
-        hourlyDatasets: {} as HourlyDatasets,
-        pointMovement: 0,
-      };
-
-    if (metaculusTimeSeries.length === 0) {
-      setError("No data available from prediction markets");
-      return {
-        riskIndex: [],
-        hourlyDatasets: {} as HourlyDatasets,
-        pointMovement: 0,
-      };
-    }
-
-    setError(null);
-    return combineDataSources(
-      metaculusTimeSeries,
-      kalshiDelayTravel,
-      kalshiCases,
-    );
-  }, [isLoading, metaculusTimeSeries, kalshiDelayTravel, kalshiCases]);
-
-  if (!mounted) return null;
+export default async function Home() {
+  const { markets, fetchedAt } = await getLiveMarkets();
+  const last = riskIndex[riskIndex.length - 1];
+  const lastDate = utcDate(last.date);
+  const captureFrom = utcDate(manifest.series.riskIndex.from);
 
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto] bg-gray-100 p-6 font-[family-name:var(--font-geist-sans)] text-foreground dark:bg-gray-900">
       <header className="mx-auto mb-8 w-full max-w-6xl text-center">
+        <div
+          role="status"
+          className="mx-auto mb-6 max-w-3xl rounded-lg border border-amber-300 bg-amber-50 p-4 text-left text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+        >
+          <p className="font-semibold">
+            This dashboard is not currently tracking.
+          </p>
+          <p className="mt-1 text-sm">
+            The markets behind the risk index closed at the end of 2025 and all
+            resolved No. The charts are frozen at the last data we captured,{" "}
+            {lastDate}. Open markets that still say something about bird flu are
+            listed below and refresh hourly.
+          </p>
+        </div>
         <h1 className="my-4 text-2xl font-bold md:text-5xl">
-          Will bird flu be the next COVID?{" "}
-          <MobileFriendlyTooltip>
-            Will H5N1 bird flu have an impact on people&apos;s lives on the same
-            order of magnitude as covid? Will it cause a random person huge
-            personal inconvenience?
-          </MobileFriendlyTooltip>
+          Will bird flu be the next COVID?
         </h1>
-        <p className="mb-4 min-h-[108px] text-2xl text-gray-700 dark:text-gray-300">
-          {isLoading ? (
-            "Loading risk assessment..."
-          ) : error ? (
-            <span className="text-red-500">{error}</span>
-          ) : (
-            <>
-              <span
-                className={`mb-4 block text-4xl font-bold sm:text-6xl ${getProbabilityColor(
-                  riskIndex[riskIndex.length - 1].value / 100,
-                )}`}
-              >
-                {getProbabilityWord(
-                  riskIndex[riskIndex.length - 1].value / 100,
-                )}
-              </span>{" "}
-              Our risk index gives it{" "}
-              {riskIndex[riskIndex.length - 1].value.toFixed(0)} out of 100
-              (about {riskIndex[riskIndex.length - 1].value.toFixed(0)}%) as of{" "}
-              <span className="inline-flex items-center">
-                {format(new Date(), "MMMM d, yyyy")}
-                <MobileFriendlyTooltip>
-                  The index is an average of predictions from Polymarket,
-                  Metaculus, and Kalshi. Polymarket and Kalshi are real money
-                  prediction markets. Metaculus is a forecasting community with
-                  a good track record.
-                </MobileFriendlyTooltip>
-              </span>
-            </>
-          )}
+        <p className="mb-4 text-2xl text-gray-700 dark:text-gray-300">
+          <span
+            className={`mb-4 block text-4xl font-bold sm:text-6xl ${getProbabilityColor(last.value / 100)}`}
+          >
+            {getProbabilityWord(last.value / 100)}
+          </span>
+          The index last read {last.value.toFixed(0)} out of 100 (about{" "}
+          {last.value.toFixed(0)}%) on {lastDate}.
         </p>
       </header>
 
       <main className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-          <GraphTitle
-            title="H5N1 Risk Index"
-            tooltipContent={
-              <div className="space-y-2">
-                <p>
-                  Scaled average of multiple sources (below is each source and
-                  its scaling factor, see FAQ for more details):
-                </p>
-                <ul className="list-none space-y-1.5">
-                  <li>
-                    <span className="font-medium">Metaculus</span>: Will CDC
-                    report 10,000+ cases by 2026?{" "}
-                    <span className="opacity-75">× {WEIGHTS.metaculus}</span>
-                  </li>
-                  <li>
-                    <span className="font-medium">Kalshi Travel</span>: Will CDC
-                    recommend delaying travel?{" "}
-                    <span className="opacity-75">
-                      × {WEIGHTS.kalshiDelayTravel}
-                    </span>
-                  </li>
-                  <li>
-                    <span className="font-medium">Kalshi Cases</span>: Will
-                    there be 10,000+ cases this year?{" "}
-                    <span className="opacity-75">× {WEIGHTS.kalshiCases}</span>
-                  </li>
-                </ul>
-              </div>
-            }
-          >
-            <div
-              className={cn(
-                "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-base",
-                Number(pointMovement) >= 0
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                  : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-              )}
-            >
-              {Number(pointMovement) >= 0 ? (
-                <ArrowUpIcon className="h-4 w-4" />
-              ) : (
-                <ArrowDownIcon className="h-4 w-4" />
-              )}
-              <span>{Math.abs(Number(pointMovement))} 24h</span>
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+              What open markets say now
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Shown as they are, not combined into an index. Most are broader
+              than H5N1. A dash means the source did not answer. Fetched{" "}
+              {utcStamp(fetchedAt)}.
+            </p>
+          </div>
+          {markets.length ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {markets.map((m) => (
+                <MarketCard key={m.url} m={m} />
+              ))}
             </div>
-          </GraphTitle>
-          <LineGraph
-            data={riskIndex}
-            color="#ef4444"
-            label="Risk index value"
-            formatValue={(v) => `${v.toFixed(1)}%`}
-            domain={[0, 100]}
-            tickFormatter={dateSix}
-            tooltipLabelFormatter={dateOne}
-            tooltipFormatter={(value) => {
-              const point = riskIndex.find((p) => p.value === value);
-              if (!point?.date)
-                return [value.toFixed(1) + "%", "Risk index value"];
+          ) : (
+            <p className="rounded-lg bg-white p-5 text-gray-600 shadow-lg dark:bg-gray-800 dark:text-gray-300">
+              None of the market APIs answered just now. Try again in an hour.
+            </p>
+          )}
+        </section>
 
-              const meta = hourlyDatasets.meta?.find(
-                (p) => p.date === point.date,
-              );
-              const kalshiT = hourlyDatasets.travel?.find(
-                (p) => p.date === point.date,
-              );
-              const kalshiC = hourlyDatasets.cases?.find(
-                (p) => p.date === point.date,
-              );
-
-              return [
-                [
-                  `Risk index value: <b>${value.toFixed(1)}%</b>`,
-                  `Formed from an average of:`,
-                  `• 10,000 US cases before 2026: <b>${meta ? meta.value.toFixed(1) : "-"}%</b> (Metaculus × ${WEIGHTS.metaculus})`,
-                  `• 10,000 US cases this year: <b>${kalshiC ? kalshiC.value.toFixed(1) : "-"}%</b> (Kalshi × ${WEIGHTS.kalshiCases})`,
-                  `• CDC travel warning before 2026: <b>${kalshiT ? kalshiT.value.toFixed(1) : "-"}%</b> (Kalshi × ${WEIGHTS.kalshiDelayTravel})`,
-                ].join("<br />"),
-                "",
-              ];
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+              The archived index, {captureFrom} to {lastDate}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Rebuilt from Wayback Machine captures of this site&apos;s own data
+              feeds, using the original formula.
+            </p>
+          </div>
+          <ArchivedCharts
+            series={{
+              riskIndex,
+              components,
+              metaculus,
+              kalshiCases,
+              kalshiTravel,
+              polymarket,
+              cdc,
             }}
           />
-        </div>
+        </section>
 
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-          Included in index:
-        </h3>
+        <section className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
+          <h3 className="mb-3 text-xl font-semibold">Download the data</h3>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            {RAW_DOWNLOADS.map((d) => (
+              <li key={d.path}>
+                <a
+                  href={d.path}
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {d.name}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a
+                href="https://github.com/Goodheart-Labs/h5n1-dashboard/tree/main/public/archive/raw"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Every capture, on GitHub
+              </a>
+            </li>
+          </ul>
+        </section>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Will CDC report 10,000 or more H5 avian influenza cases in the United States before January 1, 2026?"
-              sourceUrl="https://www.metaculus.com/questions/30960/?sub-question=30732"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={metaculusTimeSeries}
-              color="#10b981"
-              label="Metaculus Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              domain={[0, 100]}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateFour}
-            />
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Above 10,000 Bird Flu (H5N1) cases this year?"
-              sourceUrl="https://kalshi.com/markets/kxh5n1cases/h5n1-cases"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={kalshiCases}
-              color="#8b5cf6"
-              label="Kalshi Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-            />
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-            <GraphTitle
-              title="Will the CDC recommend delaying non-essential travel due to H5 bird flu before 2026?"
-              sourceUrl="https://kalshi.com/markets/kxcdctravelh5/avian-flu-travel-warning"
-              tooltipContent=""
-            />
-            <LineGraph
-              data={kalshiDelayTravel}
-              color="#8b5cf6"
-              label="Kalshi Prediction (%)"
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              tickFormatter={dateFour}
-              tooltipLabelFormatter={dateTwo}
-              domain={[0, 100]}
-            />
-          </div>
-        </div>
-
-        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-          Other useful indicators:
-        </h3>
-
-      </main>
-
-      {/* Footer */}
-      <footer className="mx-auto mt-8 w-full max-w-6xl text-center text-sm text-gray-500 dark:text-gray-400">
-        <div className="mb-8 rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
-          <h3 className="mb-2 text-lg font-semibold">Stay Updated</h3>
-          <p className="mb-4 text-gray-600 dark:text-gray-300">
-            Get updated on if H5N1 risk levels change significantly or if we
-            build another dashboard for some comparable risk. Your email will
-            not be used for other purposes.
-          </p>
-          <form
-            className="mx-auto flex max-w-md flex-col gap-2 sm:flex-row"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const email = (e.target as HTMLFormElement).email.value;
-
-              try {
-                const res = await fetch("/api/email", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email }),
-                });
-
-                if (!res.ok) throw new Error();
-
-                setSubmitStatus("success");
-                (e.target as HTMLFormElement).reset();
-              } catch {
-                setSubmitStatus("error");
-              }
-            }}
-          >
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-              required
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Update Me
-            </button>
-          </form>
-          {submitStatus === "success" && (
-            <p className="mt-2 text-green-600">
-              Thanks! We&apos;ll send you an email if the risk levels change
-              significantly or if we build another risk dashboard.
-            </p>
-          )}
-          {submitStatus === "error" && (
-            <p className="mt-2 text-red-600">
-              Something went wrong. Please try again.
-            </p>
-          )}
-        </div>
-        <div className="mb-8 mt-8 rounded-lg bg-white p-6 text-left shadow-lg dark:bg-gray-800">
+        <section className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
           <h3 className="mb-6 text-2xl font-semibold">
             Frequently Asked Questions
           </h3>
+          <Faq />
+        </section>
+      </main>
 
-          <div className="space-y-4">
-            <Collapsible.Root className="rounded border border-gray-200 dark:border-gray-700">
-              <Collapsible.Trigger className="flex w-full items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700 dark:hover:text-gray-100">
-                <h4 className="text-lg font-medium">
-                  How is the risk index calculated?
-                </h4>
-                <ChevronDownIcon className="h-5 w-5 text-gray-500 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
-              </Collapsible.Trigger>
-              <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-slideUp data-[state=open]:animate-slideDown">
-                <div className="space-y-4 border-t border-gray-200 p-4 text-gray-600 dark:border-gray-700 dark:text-gray-300">
-                  <p>
-                    We have three individual data sources that relate to whether
-                    bird flu will be bad, but even if they all resolve positive,
-                    we might only have something like winter flu.
-                  </p>
-                  <p>
-                    As a result I, Nathan Young, have used my professional
-                    judgement as a forecaster, to assign a conditional
-                    probability to each datasource that if it resolves positive,
-                    the actual central question does.
-                  </p>
-                  <p className="font-mono text-sm">
-                    ie P(bird flu as bad as covid) = P(bird flu as bad as covid
-                    | 10,000 US cases) x P(10,000 US cases)
-                  </p>
-                  <p>
-                    If this page gets lots of traffic, I will crowdsource P(bird
-                    flu as bad as covid | 10,000 US cases), but as it is, I made
-                    a guess.
-                  </p>
-                  <p>
-                    Next we have three of these, and I have taken the average.
-                  </p>
-                  <p>So the full forecast is as follows:</p>
-                  <p className="whitespace-pre-wrap font-mono text-sm">
-                    Index = ( Nathan&apos;s estimate of P(bird flu as bad as
-                    covid | 10,000 US cases) × Current Metaculus P(10,000 US
-                    cases) + Nathan&apos;s estimate of P(bird flu as bad as
-                    covid | 10,000 US cases) × Current Kalshi P(10,000 US cases)
-                    + Nathan&apos;s estimate of P(bird flu as bad as covid | CDC
-                    travel advisory) × Current Kalshi P(CDC travel advisory) ) ÷
-                    3
-                  </p>
-                  <p>The weights are .5, .5 and .1 respectively.</p>
-                  <p>
-                    I may be wrong here, but I really do not think a straight or
-                    weighted average is the right answer. I agree that I should
-                    take some group median on these made up values.
-                  </p>
-                </div>
-              </Collapsible.Content>
-            </Collapsible.Root>
-          </div>
-        </div>
-        <div className="mb-8 text-gray-600 dark:text-gray-300">
-          <p className="mb-2">
-            If you want to vote for other things to be included in the index or
-            to see other data sources on this site,{" "}
-            <a
-              href="https://viewpoints.xyz/polls/h5n1-dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline hover:text-blue-600"
-            >
-              please vote using this 2 minute poll
-            </a>
-          </p>
-        </div>
-
-        <div className="mb-1 text-center">
+      <footer className="mx-auto mt-8 w-full max-w-6xl space-y-1 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p>
           <a
             href="https://github.com/Goodheart-Labs/h5n1-dashboard"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-600"
           >
-            View the source code on GitHub
+            Source code on GitHub
           </a>
-        </div>
-        <div className="mb-1 text-gray-600 dark:text-gray-300">
-          If you want to support more work like this,{" "}
+        </p>
+        <p>
+          Built by{" "}
+          <a
+            href="https://x.com/NathanpmYoung"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-600"
+          >
+            Nathan Young
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://x.com/tone_row_"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-600"
+          >
+            Rob Gordon
+          </a>{" "}
+          of{" "}
+          <a
+            href="https://goodheartlabs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-600"
+          >
+            Goodheart Labs
+          </a>
+          . Launched January 2025, frozen February 2025, archived September
+          2026.
+        </p>
+        <p>
+          More work like this:{" "}
           <a
             href="https://nathanpmyoung.substack.com"
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-600"
           >
-            buy a paid subscription to Predictive Text
+            Predictive Text
           </a>
-        </div>
-        <div className="mb-1 flex flex-col items-center gap-2">
-          <p className="text-gray-600 dark:text-gray-300">
-            If you want more people to see this dashboard today, a vote on
-            Product Hunt would help
-          </p>
-        </div>
-
-        <div className="mb-1">
-          Built by&nbsp;
-          <span className="inline-flex items-center gap-2">
-            <a
-              href="https://x.com/NathanpmYoung"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-blue-600"
-            >
-              Nathan Young
-              <Image
-                src="https://unavatar.io/twitter/NathanpmYoung"
-                alt="Nathan Young"
-                className="rounded-full"
-                width={24}
-                height={24}
-              />
-            </a>
-          </span>
-          <span>&nbsp;and&nbsp;</span>
-          <span className="inline-flex items-center">
-            <a
-              href="https://x.com/tone_row_"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-blue-600"
-            >
-              Rob Gordon
-              <Image
-                src="https://unavatar.io/twitter/tone_row_"
-                alt="Rob Gordon"
-                className="rounded-full"
-                width={24}
-                height={24}
-              />
-            </a>
-            <span>&nbsp;of&nbsp;</span>
-            <a
-              href="https://goodheartlabs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-600"
-            >
-              Goodheart Labs
-            </a>
-          </span>
-        </div>
-
-        <span>&nbsp;</span>
-
-        <p>Last updated: {mounted ? new Date().toLocaleDateString() : ""}</p>
+        </p>
       </footer>
     </div>
   );
-}
-
-const dateOne = createSafeDateFormatter("MMM d - ha 'UTC'");
-const dateTwo = createSafeDateFormatter("MMM d - HH:mm 'UTC'");
-const dateFour = createSafeDateFormatter("MMM d");
-const dateSix = createSafeDateFormatter("MMM d ha");
-
-/**
- * This creates a safe date formatter that fails silently,
- * and returns an empty string if the date is invalid.
- */
-function createSafeDateFormatter(dateFormat: string) {
-  return (date: string) => {
-    try {
-      return format(new Date(date), dateFormat);
-    } catch {
-      return "";
-    }
-  };
 }
