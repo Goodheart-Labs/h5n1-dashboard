@@ -28,10 +28,9 @@ const round = (v: number) => Math.round(v * 100) / 100;
 // Metaculus: recency-weighted community mean, one point per aggregation step
 const meta = read<MetaculusResponse>("metaculus_30960_20250208.json");
 const metaculus: ChartDataPoint[] =
-  meta.question.aggregations.recency_weighted.history.map((p) => ({
-    date: iso(p.start_time),
-    value: round(p.means[0] * 100),
-  }));
+  meta.question.aggregations.recency_weighted.history
+    .filter((p) => p.means?.length)
+    .map((p) => ({ date: iso(p.start_time), value: round(p.means![0] * 100) }));
 
 // Kalshi: hourly candlesticks, forward-filled on last trade price (same rule the live site used).
 // Snapshots overlap, so merge by timestamp and take the latest capture for each hour.
@@ -150,8 +149,8 @@ const manifest = {
 };
 
 const write = (name: string, data: unknown) => {
-  writeFileSync(`${OUT}/${name}`, JSON.stringify(data));
-  writeFileSync(`${PUB}/${name}`, JSON.stringify(data, null, 1));
+  writeFileSync(`${OUT}/${name}`, JSON.stringify(data, null, 2));
+  writeFileSync(`${PUB}/${name}`, JSON.stringify(data, null, 2));
 };
 write("risk_index.json", index);
 write("risk_index_components.json", components);

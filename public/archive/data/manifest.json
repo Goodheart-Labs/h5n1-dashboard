@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-09-09T21:42:05.796Z",
+  "built_at": "2026-09-09T21:54:03.089Z",
   "note": "Frozen copy of the H5N1 risk dashboard data. Sources were captured by the Wayback Machine from this site's own API routes between 2025-01-08 and 2025-02-08; the underlying markets have since closed and their APIs no longer serve history.",
   "weights": {
     "metaculus": 0.5,
